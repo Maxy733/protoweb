@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up | Book Recommender</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'brand-bg': '#FFFFFF',
+                        'brand-surface': '#F8F7F5',
+                        'brand-charcoal': '#2F2F2F',
+                        'brand-muted-grey': '#858585',
+                        'brand-light-grey': '#EAEAEA',
+                        'brand-accent': '#A18A68', // Muted Gold/Brown
+                        'brand-accent-hover': '#8A7354',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-brand-surface font-sans text-brand-charcoal">
+
+    <div class="flex min-h-screen">
+        
+        <!-- Left Side: Image -->
+        <div class="hidden lg:block w-1/2 bg-cover bg-center" style="background-image: url('https://placehold.co/1000x1500/A18A68/FFFFFF?text=Join+Us');">
+            <!-- This div is for the background image -->
+        </div>
+
+        <!-- Right Side: Form -->
+        <div class="w-full lg:w-1/2 flex items-center justify-center p-8 md:p-12">
+            <div class="w-full max-w-md">
+                <a href="home.html" class="text-2xl font-bold text-brand-charcoal mb-8 block text-center lg:text-left">LIBBY BOT</a>
+                
+                <h1 class="text-3xl md:text-4xl font-bold">Create Your Account</h1>
+                <p class="mt-2 text-brand-muted-grey">Join our community to get personalized recommendations.</p>
+
+                <form class="mt-8 space-y-6">
+                    <div>
+                        <label for="fullname" class="block text-sm font-medium text-brand-charcoal">Full Name</label>
+                        <div class="mt-1">
+                            <input id="fullname" name="fullname" type="text" autocomplete="name" required class="w-full px-4 py-3 rounded-md border border-brand-light-grey focus:ring-brand-accent focus:border-brand-accent" placeholder="Jane Doe">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-brand-charcoal">Email Address</label>
+                        <div class="mt-1">
+                            <input id="email" name="email" type="email" autocomplete="email" required class="w-full px-4 py-3 rounded-md border border-brand-light-grey focus:ring-brand-accent focus:border-brand-accent" placeholder="you@example.com">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-brand-charcoal">Password</label>
+                        <div class="mt-1">
+                            <input id="password" name="password" type="password" autocomplete="new-password" required class="w-full px-4 py-3 rounded-md border border-brand-light-grey focus:ring-brand-accent focus:border-brand-accent" placeholder="••••••••">
+                        </div>
+                    </div>
+                    
+                     <div>
+                        <label for="confirm-password" class="block text-sm font-medium text-brand-charcoal">Confirm Password</label>
+                        <div class="mt-1">
+                            <input id="confirm-password" name="confirm-password" type="password" autocomplete="new-password" required class="w-full px-4 py-3 rounded-md border border-brand-light-grey focus:ring-brand-accent focus:border-brand-accent" placeholder="••••••••">
+                        </div>
+                    </div>
+
+                    <div>
+                        <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand-accent hover:bg-brand-accent-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-accent">
+                            Create Account
+                        </button>
+                    </div>
+                </form>
+
+                <p class="mt-8 text-center text-sm text-brand-muted-grey">
+                    Already have an account?
+                    <a href="login.html" class="font-medium text-brand-accent hover:text-brand-accent-hover">
+                        Log in
+                    </a>
+                </p>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>
