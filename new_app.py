@@ -98,16 +98,38 @@ def search_books():
 
 @app.route('/api/recommendations/globally-trending', methods=['GET'])
 def get_globally_trending():
-    """Gets the top 10 books with the highest rating."""
+    """Gets the top books with the highest rating that also have a cover image."""
+    page = request.args.get('page', 1, type=int)
+    per_page = 20 
+    offset = (page - 1) * per_page
+    
     conn = get_db_connection()
     if not conn: return jsonify({"error": "Database connection failed."}), 500
     
     try:
         cursor = conn.cursor()
-        # A better trending logic: order by rating and get the top 10
-        cursor.execute("SELECT * FROM books WHERE rating IS NOT NULL ORDER BY rating DESC LIMIT 10")
+        # UPDATED: The query now also filters for books that have a coverurl.
+        cursor.execute(
+            """
+            SELECT * FROM books 
+            WHERE rating IS NOT NULL AND coverurl IS NOT NULL AND coverurl <> ''
+            ORDER BY rating DESC 
+            LIMIT %s OFFSET %s
+            """,
+            (per_page, offset)
+        )
         results = cursor.fetchall()
-        return jsonify(results)
+        
+        # UPDATED: The count query also needs to be updated to match.
+        cursor.execute("SELECT COUNT(*) FROM books WHERE rating IS NOT NULL AND coverurl IS NOT NULL AND coverurl <> ''")
+        total_books = cursor.fetchone()['count']
+        
+        return jsonify({
+            'books': results,
+            'total_books': total_books,
+            'page': page,
+            'per_page': per_page
+        })
     finally:
         cursor.close()
         conn.close()
@@ -130,8 +152,6 @@ def recommend_based_on_book(book_id):
         recommendations = []
         source_genre = source_book.get('genre')
         
-        # --- UPDATED LOGIC ---
-        # 1. Prioritize recommending by genre if it exists.
         if source_genre:
             cursor.execute(
                 "SELECT * FROM books WHERE genre = %s AND id != %s ORDER BY RANDOM() LIMIT 10",
@@ -139,8 +159,6 @@ def recommend_based_on_book(book_id):
             )
             recommendations = cursor.fetchall()
         
-        # 2. If no genre recommendations were found, or if the book had no genre,
-        #    fall back to recommending by author.
         if not recommendations:
             source_author = source_book.get('author')
             if source_author:
