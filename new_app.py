@@ -114,27 +114,42 @@ def get_globally_trending():
 
 @app.route('/api/recommendations/based-on-book/<int:book_id>', methods=['GET'])
 def recommend_based_on_book(book_id):
-    """Recommends other books from the same genre."""
+    """Recommends other books from the same genre, with a fallback to the same author."""
     conn = get_db_connection()
     if not conn: return jsonify({"error": "Database connection failed."}), 500
     
     try:
         cursor = conn.cursor()
-        # First, find the genre of the source book
-        cursor.execute("SELECT genre FROM books WHERE id = %s", (book_id,))
+        # First, find the genre and author of the source book
+        cursor.execute("SELECT genre, author FROM books WHERE id = %s", (book_id,))
         source_book = cursor.fetchone()
         
-        if not source_book or not source_book['genre']:
-            return jsonify({"error": "Source book not found or has no genre."}), 404
+        if not source_book:
+            return jsonify({"error": "Source book not found."}), 404
         
-        source_genre = source_book['genre']
+        recommendations = []
+        source_genre = source_book.get('genre')
         
-        # Now, find other books with the same genre, excluding the source book itself
-        cursor.execute(
-            "SELECT * FROM books WHERE genre = %s AND id != %s ORDER BY RANDOM() LIMIT 10",
-            (source_genre, book_id)
-        )
-        recommendations = cursor.fetchall()
+        # --- UPDATED LOGIC ---
+        # 1. Prioritize recommending by genre if it exists.
+        if source_genre:
+            cursor.execute(
+                "SELECT * FROM books WHERE genre = %s AND id != %s ORDER BY RANDOM() LIMIT 10",
+                (source_genre, book_id)
+            )
+            recommendations = cursor.fetchall()
+        
+        # 2. If no genre recommendations were found, or if the book had no genre,
+        #    fall back to recommending by author.
+        if not recommendations:
+            source_author = source_book.get('author')
+            if source_author:
+                cursor.execute(
+                    "SELECT * FROM books WHERE author = %s AND id != %s ORDER BY RANDOM() LIMIT 10",
+                    (source_author, book_id)
+                )
+                recommendations = cursor.fetchall()
+
         return jsonify(recommendations)
     finally:
         cursor.close()
