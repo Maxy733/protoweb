@@ -1,12 +1,13 @@
 # app.py
-# This is the main file for our Flask API backend.
+# A simplified version of the Flask API that reads all data from a local CSV file.
+# This version does not include user authentication or database connections.
 
 # Step 1: Import the necessary libraries
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import pandas as pd
 import random
-import re # Import the regular expressions library for advanced cleaning
+import re
 
 # Step 2: Create an instance of the Flask application
 app = Flask(__name__)
@@ -14,33 +15,31 @@ CORS(app)
 
 # Step 3: Load Data from Your CSV File
 try:
-    # Use pandas to read the CSV file.
+    # Read from the cleaned CSV file.
     df = pd.read_csv("cleaned_books.csv")
 
-    # --- FINAL, MOST ROBUST FIX ---
-    # 1. Automatically clean ALL column names.
+    # Clean all column names (strip whitespace, make lowercase, remove special chars)
     df.columns = [re.sub(r'[^a-zA-Z0-9]', '', col).lower() for col in df.columns]
     
+    # --- DEBUGGING STEP ---
     print("Cleaned DataFrame columns are:", list(df.columns))
 
-    # 2. Rename 'itemno' to 'id'.
+    # Rename 'itemno' to 'id' for consistency.
     if 'itemno' in df.columns:
         df.rename(columns={'itemno': 'id'}, inplace=True)
     else:
-        raise KeyError("Could not find a column named 'itemno' after cleaning. Please ensure your CSV file has a column like 'item_no' or 'itemno'.")
+        raise KeyError("Could not find a column named 'itemno' after cleaning.")
 
-    # 3. Ensure 'title' and 'author' columns exist and are strings
+    # Ensure 'title' and 'author' columns exist and are strings
     if 'title' not in df.columns or 'author' not in df.columns:
         raise KeyError("The CSV file must contain 'title' and 'author' columns.")
     
     df['title'] = df['title'].astype(str)
     df['author'] = df['author'].astype(str)
     
-    # --- NEW FIX: Sanitize the data to make it JSON-safe ---
-    # This replaces any pandas-specific 'NaN' values with Python's 'None',
-    # which jsonify can correctly convert to 'null'.
+    # Sanitize data to make it JSON-safe (replaces NaN with None)
     df = df.where(pd.notna(df), None)
-
+    
     # The DataFrame is now clean and ready.
     books_db = df.to_dict('records')
 
@@ -82,31 +81,30 @@ def get_globally_trending():
     random.shuffle(books_db)
     return jsonify(books_db[:10])
 
-# --- Recommendation Strategy 2: Content-Based (by Author) ---
+# --- Recommendation Strategy 2: Content-Based (by Author/Genre if available) ---
 @app.route('/api/recommendations/based-on-book/<int:book_id>', methods=['GET'])
 def recommend_based_on_book(book_id):
     if not books_db:
         return jsonify({"error": "Database is empty or failed to load."}), 500
+        
     source_book = next((book for book in books_db if book.get("id") == book_id), None)
     if not source_book:
         return jsonify({"error": "Source book not found"}), 404
-    source_author = source_book.get("author")
-    if not source_author or pd.isna(source_author):
-        return jsonify({"error": "Source book has no author"}), 400
-    recommendations = [
-        book for book in books_db 
-        if book.get("author") == source_author and book.get("id") != book_id
-    ]
-    return jsonify(recommendations)
 
-# --- Endpoint to get a single book's details ---
-@app.route('/api/books/<int:book_id>', methods=['GET'])
-def get_book_by_id(book_id):
-    book = next((book for book in books_db if book.get("id") == book_id), None)
-    if book:
-        return jsonify(book)
-    else:
-        return jsonify({"error": "Book not found"}), 404
+    # Prioritize recommending by genre if it exists
+    source_genre = source_book.get("genre")
+    if source_genre:
+        recommendations = [book for book in books_db if book.get("genre") == source_genre and book.get("id") != book_id]
+        random.shuffle(recommendations)
+        return jsonify(recommendations[:10])
+
+    # Fallback to recommending by author if no genre
+    source_author = source_book.get("author")
+    if source_author:
+        recommendations = [book for book in books_db if book.get("author") == source_author and book.get("id") != book_id]
+        return jsonify(recommendations[:10])
+
+    return jsonify({"error": "Source book has no genre or author to base recommendations on."}), 400
 
 
 # Step 5: Run the Flask Application
